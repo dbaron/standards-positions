@@ -29,6 +29,15 @@
       .space dt {
         padding-bottom: 5px;
       }
+
+      table.dataTable > tbody > tr:target,
+      table.dataTable > tbody > tr.shown:target + tr {
+        background: #fd0;
+      }
+
+      tr:not(:hover):not(:focus-within) > .link-control > a {
+        visibility: hidden;
+      }
     </style>
   </head>
   <body>
@@ -62,6 +71,7 @@
         <table id="mozPositions" class="table table-hover dataTable">
           <thead>
             <tr>
+              <th></th>
               <th></th>
               <th class="sorting">Specification</th>
               <th class="sorting">Mozilla Position</th>
@@ -107,6 +117,39 @@
           "harmful": "danger"
         }
 
+        // This is a *sequence* of RegExps, matched from first to last.
+        // If one matches, then the first parenthesized match within it
+        // will be used as the spec's ID (with some subsequent character
+        // modifications).
+        var url_to_id_regexes = [
+          /^https:\/\/github\.com\/[^/]*\/([^/]*\/(pull|issues)\/\d+)$/,
+          /^https:\/\/github\.com\/[^/]*\/([^/]*)$/,
+          /^https:\/\/tools\.ietf\.org\/html\/(rfc\d+)$/,
+          /^https:\/\/tools\.ietf\.org\/html\/draft-[^-/]*-([^/]*)$/,
+          /^https:\/\/[^./]*\.github\.io\/([^/]*)$/,
+          /^https:\/\/[^./]*\.github\.io\/([^/]*)\/.*$/,
+          /^https:\/\/drafts\.[^./]*\.org\/([^/]*)\/?$/, // drafts.csswg.org, etc.
+          /^https:\/\/([^/.]*)\.spec\.whatwg\.org\/?$/,
+          /^https:\/\/github.com\/.*\/([^/]*)-explainer.md$/,
+          /^https:\/\/[^.]*\.spec\.whatwg\.org\/.*#(.*)$/,
+          /^https:\/\/html\.spec\.whatwg\.org\/multipage\/.*#(.*)$/,
+          /^https:\/\/www\.unicode\.org\/review\/[^/]*\/([^/.]*).html$/,
+          /^https:\/\/indieweb\.org\/([^/]*)$/,
+          /^https:\/\/(iot\.mozilla\.org\/[^/.]*)\/$/,
+          /^https:\/\/www\.w3\.org\/TR\/\d{4}\/[A-Z]*-([^/]*)-\d{8}\/?$/,
+        ];
+
+        function itemToRowId(item) {
+          var url = item.url;
+          for (regex of url_to_id_regexes) {
+            var m = regex.exec(url);
+            if (m) {
+              return m[1].replace("/", "-");
+            }
+          }
+          return "";
+        }
+
         var REPO_OWNER = "mozilla"
         var REPO_NAME = "standards-positions"
 
@@ -120,8 +163,23 @@
               dataSrc: ''
           },
           dom: 'ilfrtip',
-          "order": [[2, "asc"]],
+          rowId: itemToRowId,
+          "order": [[3, "asc"]],
           "columns": [
+              {
+                "className": 'link-control',
+                "data": null,
+                "defaultContent": '',
+                "render": function (data, type, row) {
+                  var id = itemToRowId(data);
+                  if (id != "") {
+                    return "<a href='#" + id + "'><span class='glyphicon glyphicon-link' aria-hidden='true'></span><span class='sr-only'>link</span></a>";
+                  }
+                  return "";
+                },
+                "orderable": false,
+                "searchable": false
+              },
               {
                 "data": "org",
                 "render": function (data, type, row) {
