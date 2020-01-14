@@ -302,6 +302,18 @@
             }
           }
         } );
+
+        // Work around bugs in both Chrome and Firefox relating to
+        // anchor scrolling and :target selection.
+        $('#mozPositions').on('order.dt', function() {
+          setTimeout(function() {
+            // just "location.hash = location.hash" would be enough for
+            // Firefox, but not Chrome.
+            var hash = location.hash;
+            location.hash = "";
+            location.hash = hash;
+          }, 0);
+        } );
     })
     </script>
   </body>
